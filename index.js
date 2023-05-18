@@ -2,10 +2,6 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 
-app.use(cors());
-
-app.use(express.json());
-
 const requestLogger = (request, response, next) => {
   console.log("Method:", request.method);
   console.log("Path:  ", request.path);
@@ -13,7 +9,12 @@ const requestLogger = (request, response, next) => {
   console.log("---");
   next();
 };
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static("build"));
 app.use(requestLogger);
+
 let notes = [
   {
     id: 1,
@@ -79,6 +80,26 @@ app.delete("/api/notes/:id", (request, response) => {
   notes = notes.filter((note) => note.id !== id);
 
   response.status(204).end();
+});
+
+app.put("/api/notes/:id", (request, response) => {
+  const id = Number(request.params.id);
+  const body = request.body;
+
+  if (!body) {
+    return response.status(400).json({
+      error: "body missing",
+    });
+  }
+
+  const note = {
+    content: body.content,
+    important: body.important || false,
+    id: id,
+  };
+
+  notes = notes.map((n) => (n.id === id ? note : n));
+  response.json(note);
 });
 
 const unknownEndpoint = (request, response) => {
